@@ -38,7 +38,7 @@ def aggrid_interactive_table(df: pd.DataFrame):
         dict: The selected row
     """
     options = GridOptionsBuilder.from_dataframe(
-        df, enableRowGroup=True, enableValue=True, enablePivot=True
+        df, enableRowGroup=True, enableValue=True, enableSort=True
     )
 
 
@@ -54,7 +54,12 @@ def aggrid_interactive_table(df: pd.DataFrame):
         allow_unsafe_jscode=True,
     )
 
-    return selection
+    if len(selection['selected_rows']) > 0:
+        out = selection['selected_rows']
+    else:
+        out = None
+    
+    return out
 
 def filter_table(merged, selection):
     print(selection)

@@ -160,8 +160,10 @@ def deduplication_db2(ext, ext2):
     return ext, ext2
 
 def match(catch_merge, ext_merge, date, trashold, window=0):
-    catch_date = catch_merge[catch_merge.catch_date==date.date()].copy()
-    ext_date = ext_merge[ext_merge.date==date.date()].copy()
+
+    catch_date = catch_merge[catch_merge.catch_date == date].copy()
+    ext_date = ext_merge[ext_merge.date == date].copy()
+
     print(catch_date.shape, ext_date.shape)
     catch_date['key'] = 0
     ext_date['key'] = 0
@@ -175,5 +177,5 @@ def match(catch_merge, ext_merge, date, trashold, window=0):
     result_final = result_final[result_final.match.isnull()]
     print(result_final.shape)
     result_not_match = result_final[['id_ves','id_fish_x','fish_x','catch_volume','catch_date']].drop_duplicates()
-    result_not_match.columns = ['id судно','id рыбы','название рыбы','масса (кг)','дата']
+    result_not_match.columns = ['id судна','id рыбы','название рыбы','масса (кг)','дата']
     return result_not_match, result_final

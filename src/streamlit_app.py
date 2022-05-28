@@ -2,8 +2,9 @@
 import streamlit as st
 import streamlit_funcs
 import utils.helpers as helpers
-import streamlit_funcs
 import pandas as pd
+from datetime import date
+
 # st.session_state = {}
 
 st.set_page_config(
@@ -28,35 +29,47 @@ if 'db1' not in st.session_state:
 if 'db2' not in st.session_state:
     ext1, ext2 = streamlit_funcs.load_db2(PATH_TO_DB2_FOLDER)
 
-    ext1, ext2 = helpers.deduplication_db2(ext1.head(100), ext2.head(100))
-    st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
+    # ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
+    # st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
 
-st.sidebar.write("Параметры поиска")
-date = st.sidebar.date_input('Введите дату')
-diff = st.sidebar.slider('Введите допустимое отклонение', min_value=0., max_value=1., step=0.01)
+    st.session_state['db2'] = pd.read_pickle("db2.pkl")
 
-st.sidebar.write("Загрузка данных")
+mode = st.sidebar.selectbox('Режим поиска', ['Несоответствия с известным id', 'Несоответствия по весу'])
 
-ext1_flow = st.sidebar.file_uploader('ext1')
-ext2_flow = st.sidebar.file_uploader('ext2')
+if mode == 'Несоответствия с известным id':
+    pass
+else:
 
-update = st.sidebar.button('Обновить')
+    st.sidebar.write("Параметры поиска")
+    date = st.sidebar.date_input('Введите дату', value=date(2022, 1, 1))
+    diff = st.sidebar.slider('Введите допустимое отклонение', min_value=0., max_value=1., step=0.01, value=0.01)
+    update_input = st.sidebar.button('Обновить', key='update_input')
+    if update_input:
+        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
-if update:
-    ext1 = pd.read_csv(ext1_flow)
-    ext2 = pd.read_csv(ext2_flow)
-    st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
-    st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+    st.sidebar.write("Загрузка данных")
 
-if 'filtered_db1' not in st.session_state:
-    st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+    ext1_flow = st.sidebar.file_uploader('ext1')
+    ext2_flow = st.sidebar.file_uploader('ext2')
 
-# st.title("Проторип команды Optimists")
+    update_data = st.sidebar.button('Обновить', key='update_data')
 
-st.header('Данные 1 базы, которые ме находятся в 2 базе')
-selection = streamlit_funcs.aggrid_interactive_table(df=st.session_state['filtered_db1'])
+    if update_data:
+        ext1 = pd.read_csv(ext1_flow)
+        ext2 = pd.read_csv(ext2_flow)
+        ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
+        st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
+        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
-st.header('Наиболее похожие строчки на выбранную')
-chosen_closest = streamlit_funcs.filter_table(st.session_state['merged'], selection)
+    if 'filtered_db1' not in st.session_state:
+        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
-streamlit_funcs.aggrid_interactive_table(df=chosen_closest)
+    # st.title("Проторип команды Optimists")
+
+    st.header('Данные 1 базы, которые не находятся во 2 базе')
+    selection = streamlit_funcs.aggrid_interactive_table(df=st.session_state['filtered_db1'])
+
+    st.header('Наиболее похожие строчки на выбранную')
+    chosen_closest = streamlit_funcs.filter_table(st.session_state['merged'], selection)
+
+    streamlit_funcs.aggrid_interactive_table(df=chosen_closest)
