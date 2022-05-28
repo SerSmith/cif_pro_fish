@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from pandas.api.types import is_numeric_dtype
+from datetime import datetime, timedeltas
 
 def check_intersection(table1, table2, key1, key2, round_to=None):
     """Поиск пересечений по потенциальным ключам
@@ -157,3 +158,20 @@ def deduplication_db2(ext, ext2):
     print('ext2 ',ext2.shape, len(ext2.id_vsd.unique()))
 
     return ext, ext2
+
+def match(catch_merge, ext_merge, date, trashold, window=0):
+    catch_date = catch_merge[catch_merge.catch_date == date.date()].copy()
+    ext_date = ext_merge[ext_merge.date == date.date()].copy()
+    print(catch_date.shape, ext_date.shape)
+    catch_date['key'] = 0
+    ext_date['key'] = 0
+    result = pd.merge(catch_date, ext_date[['id_vsd','id_fish','fish','volume','unit','date','key']], on ='key').drop("key", 1)
+    result['catch_upper'] = result['catch_volume'] * (1 + trashold)
+    result['catch_lower'] = result['catch_volume'] * (1 - trashold)
+    result_match = result[(result.catch_upper>=result.volume) & (result.catch_lower<=result.volume)][['id_ves','id_fish_x','fish_x']].drop_duplicates().copy()
+    result_match['match'] = 'True'
+    print('catch: ',catch_date[['id_ves','id_fish','fish']].drop_duplicates().shape[0], 'match: ', result_match.shape[0])
+    result_final = pd.merge(result, result_match, on=['id_ves','id_fish_x','fish_x'], how='left')
+    result_final = result_final[result_final.match.isnull()]
+    print(result_final.shape)
+    return result_match.drop_duplicates(), result_final
