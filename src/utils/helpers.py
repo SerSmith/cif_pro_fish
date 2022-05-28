@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from pandas.api.types import is_numeric_dtype
-from datetime import datetime, timedeltas
+from datetime import datetime, timedelta
 
 def check_intersection(table1, table2, key1, key2, round_to=None):
     """Поиск пересечений по потенциальным ключам

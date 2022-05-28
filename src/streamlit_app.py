@@ -45,10 +45,10 @@ if update:
     ext1 = pd.read_csv(ext1_flow)
     ext2 = pd.read_csv(ext2_flow)
     st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
-    st.session_state['filtered_db1'], st.session_state['merged'] = streamlit_funcs.filter_found_options(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+    st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
 if 'filtered_db1' not in st.session_state:
-    st.session_state['filtered_db1'], st.session_state['merged'] = streamlit_funcs.filter_found_options(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+    st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
 # st.title("Проторип команды Optimists")
 
