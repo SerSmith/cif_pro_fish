@@ -201,4 +201,5 @@ def find_close(result_merge, app_data, num=20):
         result_head.columns = OUT_COLUMN_NAMES
 
         # print(result_head)
+
     return result_head

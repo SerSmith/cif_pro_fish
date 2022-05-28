@@ -62,19 +62,15 @@ def filter_table(merged, selection):
     return pd.DataFrame([['WAHOOOOO', 'Wahaa'], ['Wahaa', 'WAHOOOOO']], columns=['col1', 'col2'])
 
 
-def aggregate_db1_db2_table(db1, ext1, ext2, threshold=25):
+def aggregate_db1_db2_table(db1, db2, threshold=25):
     db1.columns = [col if col != 'catch_date' else 'date' for col in db1.columns]
     db1['date'] = pd.to_datetime(db1['date']).dt.date
     db1_aggregated = db1.groupby(['id_ves', 'date', 'id_fish'])['catch_volume'].sum().reset_index()
 
-    ext1.columns = [col if col != 'date_fishery' else 'date' for col in ext1.columns]
-    ext1['date'] = pd.to_datetime(ext1['date']).dt.date
-    db2_merged = ext2.merge(ext1, left_on=['id_vsd'], right_on=['id_vsd'], suffixes=['_ext', '_ext2'], how='left')
-
-    db2_aggregated = db2_merged.groupby(['id_ves', 'date', 'id_fish'])['volume'].sum().reset_index()
+    db2_aggregated = db2.groupby(['id_ves', 'date', 'id_fish'])['volume'].sum().reset_index()
 
     joined_bases = db1_aggregated.merge(db2_aggregated, on=['id_ves', 'id_fish', 'date'], how='inner')
-    fishes = ext2[['id_fish', 'fish']].drop_duplicates()
+    fishes = db2[['id_fish', 'fish']].drop_duplicates()
     joined_bases = joined_bases.merge(fishes, on='id_fish', how='left')
 
     joined_bases['volume_div_1000'] = joined_bases['volume'] / 1000
