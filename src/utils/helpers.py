@@ -167,36 +167,38 @@ def match(catch_merge, ext_merge, date, trashold, window=0):
     print(catch_date.shape, ext_date.shape)
     catch_date['key'] = 0
     ext_date['key'] = 0
-    result = pd.merge(catch_date, ext_date[['id_vsd','id_fish','fish','volume','unit','date','Region_Plat','key']], on ='key').drop("key", 1)
+    result = pd.merge(catch_date, ext_date[['id_vsd','id_fish','fish','volume','unit','date','Region_Plat','key','id_ves']], on ='key').drop("key", 1)
     result['catch_upper'] = result['catch_volume'] * (1 + trashold)
     result['catch_lower'] = result['catch_volume'] * (1 - trashold)
-    result_match = result[(result.catch_upper>=result.volume) & (result.catch_lower<=result.volume)][['id_ves','id_fish_x','fish_x','catch_date']].drop_duplicates().copy()
+    result['catch_upper_1000'] = result['catch_volume']/1000 * (1 + trashold)
+    result['catch_lower_1000'] = result['catch_volume']/1000 * (1 - trashold)
+    result_match = result[((result.catch_upper>=result.volume) & (result.catch_lower<=result.volume)) | ((result.catch_upper_1000>=result.volume) & (result.catch_lower_1000<=result.volume))][['id_ves_x','id_fish_x','fish_x','catch_date']].drop_duplicates().copy()
     result_match['match'] = 'True'
     print('catch: ',catch_date[['id_ves','id_fish','fish']].drop_duplicates().shape[0], 'match: ', result_match.shape[0])
-    result_final = pd.merge(result, result_match[['id_ves','id_fish_x','fish_x','match']], on=['id_ves','id_fish_x','fish_x'], how='left')
+    result_final = pd.merge(result, result_match[['id_ves_x','id_fish_x','fish_x','match']], on=['id_ves_x','id_fish_x','fish_x'], how='left')
     result_final = result_final[result_final.match.isnull()]
     print('result_final.shape with not match',result_final.shape)
-    result_not_match = result_final[['id_ves','id_fish_x','fish_x','catch_volume','catch_date']].drop_duplicates()
+    result_not_match = result_final[['id_ves_x','id_fish_x','fish_x','catch_volume','catch_date']].drop_duplicates()
     result_not_match.columns = ['id судна','id рыбы','название рыбы','масса (кг)','дата']
     return result_not_match, result_final
 
 def find_close(result_merge, app_data, num=20):
 
-    OUT_COLUMN_NAMES = ['id записи (id_vsd)','id рыбы','назавание рыбы','масса (кг)','дата']
+    OUT_COLUMN_NAMES = ['id записи (id_vsd)','id судна', 'id рыбы','назавание рыбы','масса (кг)','дата']
     selected_rows = app_data['selected_rows']
     if len(selected_rows) == 0:
         result_head = pd.DataFrame([], columns=OUT_COLUMN_NAMES)
     else:
         select = selected_rows[0]
         print('I am here', select)
-        result = result_merge[(result_merge.id_ves == select['id судна']) & (result_merge.id_fish_x == select['id рыбы'])]
+        result = result_merge[(result_merge.id_ves_x == select['id судна']) & (result_merge.id_fish_x == select['id рыбы'])]
         result['factor'] = abs(result['catch_volume'].astype(float) / result['volume'].astype(float) - 1)
-        print(result['catch_volume'])
-        print(result['volume'])
-        print(result['factor'])
-        print(result['catch_volume'] / result['volume'].astype(float))
-        result_head = result.sort_values('factor', ascending=True).head(num)#[['id_vsd','id_fish_y','fish_y','volume','date']]
-        #result_head.columns = OUT_COLUMN_NAMES
+        # print(result['catch_volume'])
+        # print(result['volume'])
+        # print(result['factor'])
+        # print(result['catch_volume'] / result['volume'].astype(float))
+        result_head = result.sort_values('factor', ascending=True).head(num)[['id_vsd','id_ves_y','id_fish_y','fish_y','volume','date']]
+        result_head.columns = OUT_COLUMN_NAMES
 
         # print(result_head)
     return result_head
