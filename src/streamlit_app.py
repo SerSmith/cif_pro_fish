@@ -34,7 +34,25 @@ if 'db2' not in st.session_state:
 
     st.session_state['db2'] = pd.read_pickle("db2.pkl")
 
-mode = st.sidebar.selectbox('Режим поиска', ['Несоответствия с известным id', 'Несоответствия по весу'])
+
+mode = st.sidebar.selectbox("Режим поиска", options=['Несоответствия с известным id', 'Несоответствия по весу'])
+
+st.sidebar.write("Загрузка данных")
+
+ext1_flow = st.sidebar.file_uploader('ext1')
+ext2_flow = st.sidebar.file_uploader('ext2')
+
+update_data = st.sidebar.button('Обновить', key='update_data')
+
+if update_data:
+    ext1 = pd.read_csv(ext1_flow)
+    ext2 = pd.read_csv(ext2_flow)
+    ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
+    st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
+    st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+
+
+
 
 if mode == 'Несоответствия с известным id':
     pass
@@ -47,19 +65,6 @@ else:
     if update_input:
         st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
-    st.sidebar.write("Загрузка данных")
-
-    ext1_flow = st.sidebar.file_uploader('ext1')
-    ext2_flow = st.sidebar.file_uploader('ext2')
-
-    update_data = st.sidebar.button('Обновить', key='update_data')
-
-    if update_data:
-        ext1 = pd.read_csv(ext1_flow)
-        ext2 = pd.read_csv(ext2_flow)
-        ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
-        st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
-        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
     if 'filtered_db1' not in st.session_state:
         st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
@@ -70,6 +75,7 @@ else:
     selection = streamlit_funcs.aggrid_interactive_table(df=st.session_state['filtered_db1'])
 
     st.header('Наиболее похожие строчки на выбранную')
-    chosen_closest = streamlit_funcs.filter_table(st.session_state['merged'], selection)
+
+    chosen_closest = helpers.find_close(st.session_state['merged'], selection)
 
     streamlit_funcs.aggrid_interactive_table(df=chosen_closest)

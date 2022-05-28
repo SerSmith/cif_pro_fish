@@ -53,13 +53,9 @@ def aggrid_interactive_table(df: pd.DataFrame):
         update_mode=GridUpdateMode.MODEL_CHANGED,
         allow_unsafe_jscode=True,
     )
-
-    if len(selection['selected_rows']) > 0:
-        out = selection['selected_rows']
-    else:
-        out = None
     
-    return out
+    return selection
+
 
 def filter_table(merged, selection):
     print(selection)
