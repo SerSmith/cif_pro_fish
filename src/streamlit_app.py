@@ -28,10 +28,10 @@ if 'db1' not in st.session_state:
 if 'db2' not in st.session_state:
     ext1, ext2 = streamlit_funcs.load_db2(PATH_TO_DB2_FOLDER)
 
-    # ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
-    # st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
+    ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
+    st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
 
-    st.session_state['db2'] = pd.read_pickle("db2.pkl")
+    # st.session_state['db2'] = pd.read_pickle("db2.pkl")
 
 
 mode = st.sidebar.selectbox("Режим поиска", options=['Несоответствия с известным id', 'Несоответствия по весу'])
@@ -47,7 +47,7 @@ update_data = st.sidebar.button('Обновить', key='update_data')
 
 
 if mode == 'Несоответствия с известным id':
-    diff = st.sidebar.slider('Введите допустимое отклонение', min_value=0., max_value=1., step=0.01, value=0.01)
+    diff = st.sidebar.slider('Введите допустимое отклонение', min_value=0, max_value=100, step=1, value=10)
 
     if update_data:
         ext1 = pd.read_csv(ext1_flow)
@@ -55,12 +55,15 @@ if mode == 'Несоответствия с известным id':
         ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
         st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
         st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
-        st.session_state['anomalies_with_keys'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff)
 
     update_input = st.sidebar.button('Обновить', key='update_input')
     if update_input:
-        st.session_state['anomalies_with_keys'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff)
     
+    if 'anomalies_with_keys' not in st.session_state:
+        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff)
+
     st.header('Расхождения между базами по данным с одинаковыми ключами')
     selection = streamlit_funcs.aggrid_interactive_table(st.session_state['anomalies_with_keys'])
 
@@ -68,23 +71,23 @@ else:
 
     st.sidebar.write("Параметры поиска")
     date = st.sidebar.date_input('Введите дату', value=date(2022, 1, 1))
-    diff = st.sidebar.slider('Введите допустимое отклонение', min_value=0., max_value=1., step=0.01, value=0.01)
+    diff = st.sidebar.slider('Введите допустимое отклонение', min_value=0, max_value=100, step=1, value=10)
 
     if update_data:
         ext1 = pd.read_csv(ext1_flow)
         ext2 = pd.read_csv(ext2_flow)
         ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
         st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
-        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff/100, window=3)
         st.session_state['anomalies_with_keys'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
 
     update_input = st.sidebar.button('Обновить', key='update_input')
     if update_input:
-        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff/100, window=3)
 
 
     if 'filtered_db1' not in st.session_state:
-        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
+        st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff/100, window=3)
 
     # st.title("Проторип команды Optimists")
 
