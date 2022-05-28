@@ -16,8 +16,8 @@ def load_db1(path_to_file):
     return db1
 
 def load_db2(path_to_file):
-    ext1 = pd.read_csv("/Users/sykuznetsov/Documents/GitHub/cif_pro_fish/data/db2/Ext.csv")
-    ext2 = pd.read_csv("/Users/sykuznetsov/Documents/GitHub/cif_pro_fish/data/db2/Ext2.csv")
+    ext1 = pd.read_csv(os.path.join(path_to_file, 'Ext.csv'))
+    ext2 = pd.read_csv(os.path.join(path_to_file, 'Ext2.csv'))
     return ext1, ext2
 
 def get_db2(ext1, ext2):
@@ -55,10 +55,6 @@ def aggrid_interactive_table(df: pd.DataFrame):
     )
 
     return selection
-
-def filter_found_options(db1, db2, date, diff, window=3):
-    return pd.DataFrame([['WAHOOOOO', 'Wahaa'], ['Wahaa', 'WAHOOOOO'], ['Wahaa', 'WAHOOOOO']], columns=['col1', 'col2']),\
-    pd.DataFrame([['WAHOOOOO', 'Wahaa'], ['Wahaa', 'WAHOOOOO']], columns=['col1', 'col2'])
 
 def filter_table(merged, selection):
     print(selection)
