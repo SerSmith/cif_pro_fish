@@ -64,3 +64,34 @@ def aggrid_interactive_table(df: pd.DataFrame):
 def filter_table(merged, selection):
     print(selection)
     return pd.DataFrame([['WAHOOOOO', 'Wahaa'], ['Wahaa', 'WAHOOOOO']], columns=['col1', 'col2'])
+
+
+def aggregate_db1_db2_table(db1, ext1, ext2, threshold=25):
+    db1.columns = [col if col != 'catch_date' else 'date' for col in db1.columns]
+    db1['date'] = pd.to_datetime(db1['date']).dt.date
+    db1_aggregated = db1.groupby(['id_ves', 'date', 'id_fish'])['catch_volume'].sum().reset_index()
+
+    ext1.columns = [col if col != 'date_fishery' else 'date' for col in ext1.columns]
+    ext1['date'] = pd.to_datetime(ext1['date']).dt.date
+    db2_merged = ext2.merge(ext1, left_on=['id_vsd'], right_on=['id_vsd'], suffixes=['_ext', '_ext2'], how='left')
+
+    db2_aggregated = db2_merged.groupby(['id_ves', 'date', 'id_fish'])['volume'].sum().reset_index()
+
+    joined_bases = db1_aggregated.merge(db2_aggregated, on=['id_ves', 'id_fish', 'date'], how='inner')
+
+    joined_bases['volume_div_1000'] = joined_bases['volume'] / 1000
+    joined_bases['volume_div_100'] = joined_bases['volume'] / 100
+    joined_bases['delta1'] = abs(joined_bases['catch_volume'] - joined_bases['volume_div_1000']) / joined_bases['catch_volume']
+    joined_bases['delta2'] = abs(joined_bases['catch_volume'] - joined_bases['volume_div_100']) / joined_bases['catch_volume']
+    joined_bases['delta3'] = abs(joined_bases['catch_volume'] - joined_bases['volume']) / joined_bases['catch_volume']
+
+    joined_bases['mismatch, %'] = joined_bases.apply(lambda x: min(x['delta1'], x['delta2'], x['delta3']), axis=1)
+    joined_bases['mismatch, %'] = (100 * joined_bases['mismatch, %']).round(2)
+
+    joined_bases = joined_bases.drop(columns=['delta1', 'delta2', 'delta3'])
+
+    joined_bases['threshold_volume'] = threshold
+    joined_bases['is_abnormal'] = joined_bases['mismatch, %'] > joined_bases['threshold_volume']
+    joined_bases['is_abnormal'] = joined_bases['is_abnormal'].astype(int)
+
+    return joined_bases

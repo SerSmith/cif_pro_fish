@@ -1,31 +1,25 @@
 import json
+import pickle
 import pandas as pd
 from typing import  Optional
 from tqdm import tqdm
 import utils.helpers as helpers
 
 NEEDED_COLS_PATH = './models/needed_columns.json'
-# def merge_catch_product_simple(catch, product):
-#     catch = catch[['id_ves', 'date', 'catch_volume']].copy()
-#     product = product[['id_ves', 'date', 'prod_volume']].copy()
-#     catch_grouped = catch.groupby(['id_ves', 'date']).sum().reset_index()
-#     product_grouped = product.groupby(['id_ves', 'date']).sum().reset_index()
-#     merged = catch_grouped.merge(product_grouped, on=['id_ves', 'date'], how='inner')
-#     return merged
+
+class prepare_models:
+    def __init__(self, models_folder) -> None:
+        all_models = p
+        pass
 
 
-# class model:
-#     def __init__(self) -> None:
-#         pass
+    def get_susp_table(self) ->pd.DataFrame:
+        """Метод, возвращаюший отсортированный спсиок полдозрительных кейсов
 
-
-#     def get_susp_table(self) ->pd.DataFrame:
-#         """Метод, возвращаюший отсортированный спсиок полдозрительных кейсов
-
-#         Returns:
-#             pd.DataFrame: Датафрейм с колонками: ves_id, date, forecast, trashhold
-#         """        
-#         pass
+        Returns:
+            pd.DataFrame: Датафрейм с колонками: ves_id, date, forecast, trashhold
+        """        
+        pass
 
 
 # def add_warning_type(tab: pd.DataFrame, trashhold: Optional[float]=None) -> pd.Series:
