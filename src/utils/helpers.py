@@ -50,3 +50,45 @@ def get_potential_keys(table1, table2, top=None, round_to=None):
     if top is not None:
         quality_df = quality_df.head(top)
     return quality_df
+
+def deduplication_db2(ext, ext2):
+    d = ext.id_vsd.value_counts()>1
+    ext_dup = ext[ext.id_vsd.isin(list(d[d==True].index))]
+
+    def coalesce(l):
+        if l[0]!=-1 and l[0]!='\\N':
+            return l[0]
+        else: return l[1]
+    
+    def deduplication_ext(grouping):
+        #print(grouping, type(grouping))
+        df = grouping.copy()
+        group_label = df['id_vsd'].unique()
+        df_new = pd.DataFrame()
+        for column in df.columns:
+            #print(coalesce(list(df[column])))
+            df_new[column] = [coalesce(list(df[column]))]
+        #print(df_new)
+        return ({group_label:df_new})
+    
+    # через ext_dup.groupby('id_vsd').deduplication_ext() не работает
+    df_result = pd.DataFrame()
+    for j in tqdm(ext_dup.groupby('id_vsd')):
+        (label, df) = j
+        df_new = pd.DataFrame()
+        for column in df.columns:
+            df_new[column] = [coalesce(list(df[column]))]
+        df_result = pd.concat([df_result, df_new])
+
+    ext_norm = ext[~ext.id_vsd.isin(list(ext_dup.id_vsd.unique()))]
+    ext = pd.concat([ext_norm, df_result])
+    print('ext ',ext.shape, len(ext.id_vsd.unique()))
+
+    d = ext2.id_vsd.value_counts()>1
+    ext_dup2= ext2[ext2.id_vsd.isin(list(d[d==True].index))]
+    ext_without_dup2 = ext_dup2[ext_dup2.unit=='\\N']
+    ext2_norm = ext2[~ext2.id_vsd.isin(list(ext_dup2.id_vsd.unique()))]
+    ext2 = pd.concat([ext2_norm, ext_without_dup2])
+    print('ext2 ',ext2.shape, len(ext2.id_vsd.unique()))
+
+    return ext, ext2
