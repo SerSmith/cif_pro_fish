@@ -54,13 +54,6 @@ def aggrid_interactive_table(df: pd.DataFrame):
         allow_unsafe_jscode=True,
     )
 
-    if len(selection['selected_rows']) > 0:
-        out = selection['selected_rows']
-    else:
-        out = None
-    
-    return out
 
-def filter_table(merged, selection):
-    print(selection)
-    return pd.DataFrame([['WAHOOOOO', 'Wahaa'], ['Wahaa', 'WAHOOOOO']], columns=['col1', 'col2'])
+    
+    return selection
