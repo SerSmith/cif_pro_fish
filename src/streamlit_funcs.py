@@ -63,6 +63,8 @@ def filter_table(merged, selection):
 
 
 def aggregate_db1_db2_table(db1, db2, threshold=25):
+    db1 = db1.copy()
+    db2 = db2.copy()
     db1.columns = [col if col != 'catch_date' else 'date' for col in db1.columns]
     db1['date'] = pd.to_datetime(db1['date']).dt.date
     db1_aggregated = db1.groupby(['id_ves', 'date', 'id_fish'])['catch_volume'].sum().reset_index()
@@ -100,5 +102,7 @@ def aggregate_db1_db2_table(db1, db2, threshold=25):
     colnames_map = dict(zip(col_order, col_names))
 
     joined_bases.columns = [colnames_map[col] for col in joined_bases.columns]
+
+    joined_bases = joined_bases.loc[joined_bases['является ли подозрительным'] == 1, :].sort_values(by='отклонение внесенного от выловленного, %', ascending=False)
 
     return joined_bases
