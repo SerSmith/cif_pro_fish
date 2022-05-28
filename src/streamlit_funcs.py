@@ -74,6 +74,8 @@ def aggregate_db1_db2_table(db1, ext1, ext2, threshold=25):
     db2_aggregated = db2_merged.groupby(['id_ves', 'date', 'id_fish'])['volume'].sum().reset_index()
 
     joined_bases = db1_aggregated.merge(db2_aggregated, on=['id_ves', 'id_fish', 'date'], how='inner')
+    fishes = ext2[['id_fish', 'fish']].drop_duplicates()
+    joined_bases = joined_bases.merge(fishes, on='id_fish', how='left')
 
     joined_bases['volume_div_1000'] = joined_bases['volume'] / 1000
     joined_bases['volume_div_100'] = joined_bases['volume'] / 100
@@ -89,5 +91,18 @@ def aggregate_db1_db2_table(db1, ext1, ext2, threshold=25):
     joined_bases['threshold_volume'] = threshold
     joined_bases['is_abnormal'] = joined_bases['mismatch, %'] > joined_bases['threshold_volume']
     joined_bases['is_abnormal'] = joined_bases['is_abnormal'].astype(int)
+
+    col_order = ['id_ves', 'date', 'id_fish', 'fish', 'catch_volume', 'volume',
+              'volume_div_1000', 'volume_div_100', 'mismatch, %', 'threshold_volume', 'is_abnormal']
+
+    joined_bases = joined_bases[col_order]
+
+    col_names = ['id судна (id_ves)', 'дата', 'id рыбы','назавание рыбы', 'выловлено (т)',
+                'внесено в базу (размерность неизвестна)', 'внесено в базу (коррекция 1/1000)', 'внесено в базу (коррекция 1/100)',
+                'отклонение внесенного от выловленного, %', 'порог отклонения, %', 'является ли подозрительным']
+
+    colnames_map = dict(zip(col_order, col_names))
+
+    joined_bases.columns = [colnames_map[col] for col in joined_bases.columns]
 
     return joined_bases
