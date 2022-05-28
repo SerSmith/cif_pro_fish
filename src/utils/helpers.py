@@ -189,14 +189,10 @@ def find_close(result_merge, app_data, num=20):
     else:
         select = selected_rows[0]
         print('I am here', select)
-        result = result_merge[(result_merge.id_ves == select['id судна']) & (result_merge.id_fish_x == select['id рыбы'])]
-        result['factor'] = abs(result['catch_volume'].astype(float) / result['volume'].astype(float) - 1)
-        print(result['catch_volume'])
-        print(result['volume'])
-        print(result['factor'])
-        print(result['catch_volume'] / result['volume'].astype(float))
-        result_head = result.sort_values('factor', ascending=True).head(num)#[['id_vsd','id_fish_y','fish_y','volume','date']]
-        #result_head.columns = OUT_COLUMN_NAMES
 
-        # print(result_head)
+        result = result_merge[(result_merge.id_ves == select['id судна']) & (result_merge.id_fish_x == select['id рыбы'])]
+        result['factor'] = (result['catch_volume'].astype(float) / result['volume'].astype(float) - 1).apply(lambda x : abs(x))
+        result_head = result.sort_values('factor', ascending=True).head(num)[['id_vsd','id_fish_y','fish_y','volume','date']]
+        result_head.columns = OUT_COLUMN_NAMES
+
     return result_head
