@@ -6,9 +6,13 @@ from st_aggrid.shared import GridUpdateMode, JsCode
 def load_db1(path_to_file):
     catch = pd.read_csv(os.path.join(path_to_file, 'catch.csv'))
     product = pd.read_csv(os.path.join(path_to_file, 'product.csv'))
+    ref_fish = pd.read_csv(os.path.join(path_to_file, 'ref', 'fish.csv'), sep=';')
     prod_type = pd.read_csv(os.path.join(path_to_file, 'ref', 'prod_type.csv'), sep=';')
-
-    db1 = catch.merge(prod_type, on='id_fish').merge(product, on=['id_ves',	'date', 'id_prod_type'])
+    db1 = pd.merge(catch,ref_fish, on='id_fish', how='left' )
+    db1['catch_date'] = pd.to_datetime(db1['date']).dt.date
+    db1['catch_volume'] = db1['catch_volume'] * 1000
+    db1.drop(['date'], inplace=True, axis=1)
+    #db1 = catch.merge(prod_type, on='id_fish').merge(product, on=['id_ves',	'date', 'id_prod_type'])
     return db1
 
 def load_db2(path_to_file):
@@ -17,8 +21,10 @@ def load_db2(path_to_file):
     return ext1, ext2
 
 def get_db2(ext1, ext2):
+    #ext, ext2 = deduplication_db2(ext, ext2)
+    ext2.loc[ext2.unit=='тонна','volume'] = ext2[ext2.unit=='тонна'] * 1000
     db2 = ext1.merge(ext2, on='id_vsd')
-    db2['date'] = pd.to_datetime(db2['date_fishery'])
+    db2['date'] = pd.to_datetime(db2.date_fishery).dt.date
     db2.drop(columns=['date_fishery'])
     return db2
 
