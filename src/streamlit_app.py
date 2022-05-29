@@ -70,7 +70,7 @@ if mode == 'Несоответствия с известным id':
 else:
 
     st.sidebar.write("Параметры поиска")
-    date = st.sidebar.date_input('Введите дату', value=date(2022, 1, 1))
+    date = st.sidebar.date_input('Введите дату', value=date(2022, 1, 2))
     diff = st.sidebar.slider('Введите допустимое отклонение', min_value=0, max_value=100, step=1, value=10)
 
     if update_data:
