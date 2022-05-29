@@ -10,8 +10,8 @@
 0. Поставьте питон 3.10.3
 1. Установить requirements: pip install -r requirements.txt
 2. Скопировать данные в папку data в корне репозитория
-3. Для запуска прототипа в консоли ввести run PATH --server.maxUploadSize 700
-, где PATH соответствует пути к файлы streamlit_app.py, например: src/streamlit_app.py, если вы в корне репы, то длля запуска нужно run /src/streamlit_app.py --server.maxUploadSize 700
+3. Для запуска прототипа в консоли ввести streamlit run PATH --server.maxUploadSize 700
+, где PATH соответствует пути к файлы streamlit_app.py, например: src/streamlit_app.py, если вы в корне репы, то длля запуска нужно streamlit run /src/streamlit_app.py --server.maxUploadSize 700
 Первичная инициализация может занять до 5 минут.
 4. Для получения результатов на тестовом датасете запустить run_test.ipynb
 ## Задача
