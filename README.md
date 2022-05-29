@@ -7,8 +7,9 @@
 
 ## Установка
 
-0. Установить requirements: pip install -r requirements.txt
-1. Скопировать данные в папку data в корне репозитория
+0. Поставьте питон 3.10.3
+1. Установить requirements: pip install -r requirements.txt
+2. Скопировать данные в папку data в корне репозитория
 3. Для запуска прототипа в консоли ввести run PATH --server.maxUploadSize 700
 , где PATH соответствует пути к файлы streamlit_app.py, например: /Documents/GitHub/cif_pro_fish/src/streamlit_app.py'
 4. Для получения результатов на тестовом датасете запустить run_test.ipynb
