@@ -62,7 +62,57 @@ def filter_table(merged, selection):
     return pd.DataFrame([['WAHOOOOO', 'Wahaa'], ['Wahaa', 'WAHOOOOO']], columns=['col1', 'col2'])
 
 
-def aggregate_db1_db2_table(db1, db2, threshold=25):
+def calc_mismatch(data):
+    data = data.copy()
+    data['delta1'] = abs(data['catch_volume'] - data['volume_div_1000']) / data['catch_volume']
+    data['delta2'] = abs(data['catch_volume'] - data['volume_div_100']) / data['catch_volume']
+    data['delta3'] = abs(data['catch_volume'] - data['volume']) / data['catch_volume']
+
+    data['mismatch, %'] = data.apply(lambda x: min(x['delta1'], x['delta2'], x['delta3']), axis=1)
+    data['mismatch, %'] = (100 * data['mismatch, %']).round(2)
+    return data.drop(columns=['delta1', 'delta2', 'delta3'])
+
+
+def find_good_by_shift(data, db2_aggregated, shift=1):
+
+    cols_to_drop = None
+    if cols_to_drop is None:
+        cols_to_drop = ['volume', 'volume_div_1000', 'volume_div_100', 'mismatch, %', 'is_abnormal']
+
+    flag = data['is_abnormal'].astype(bool)
+
+    orig_abnormal = data[flag].copy()
+    orig_abnormal = orig_abnormal.drop(columns=cols_to_drop, errors='ignore')
+    orig_abnormal = orig_abnormal.rename(columns={'date': 'as_is_date'})
+
+    good_indexes = list()
+
+    good_rows_list = []
+
+    for i in range(1, shift+1):
+        abnormal = orig_abnormal.reset_index()
+        abnormal['date'] = pd.to_datetime(abnormal['as_is_date'])
+        abnormal['date'] += pd.to_timedelta(f'{i}d')
+
+        abnormal['date'] = abnormal['date'].dt.date
+
+        data_shifted = db2_aggregated.merge(abnormal, on=['id_ves', 'id_fish', 'date'], how='inner')
+
+        data_shifted = calc_mismatch(data_shifted)
+        data_shifted['is_abnormal'] = data_shifted['mismatch, %'] > data_shifted['threshold_volume']
+
+        good_rows = data_shifted[~data_shifted['is_abnormal']].copy()
+        good_rows['is_abnormal'] = good_rows['is_abnormal'].astype(int)
+
+        new_good_indexes = [ind for ind in good_rows['index'].to_list() if ind not in good_indexes]
+        good_indexes += new_good_indexes
+        good_rows_list.append(good_rows[good_rows['index'].isin(new_good_indexes)].copy())
+    result = pd.concat(good_rows_list, ignore_index=True)
+    result = result.drop(columns=['date'])
+    return result.rename(columns={'as_is_date': 'date'})
+
+
+def aggregate_db1_db2_table(db1, db2, threshold=25, shift=3):
     db1 = db1.copy()
     db2 = db2.copy()
     db1.columns = [col if col != 'catch_date' else 'date' for col in db1.columns]
@@ -71,31 +121,31 @@ def aggregate_db1_db2_table(db1, db2, threshold=25):
 
     db2_aggregated = db2.groupby(['id_ves', 'date', 'id_fish'])['volume'].sum().reset_index()
 
+    db2_aggregated['volume_div_1000'] = db2_aggregated['volume'] / 1000
+    db2_aggregated['volume_div_100'] = db2_aggregated['volume'] / 100
+
     joined_bases = db1_aggregated.merge(db2_aggregated, on=['id_ves', 'id_fish', 'date'], how='inner')
     fishes = db2[['id_fish', 'fish']].drop_duplicates()
     joined_bases = joined_bases.merge(fishes, on='id_fish', how='left')
 
-    joined_bases['volume_div_1000'] = joined_bases['volume'] / 1000
-    joined_bases['volume_div_100'] = joined_bases['volume'] / 100
-    joined_bases['delta1'] = abs(joined_bases['catch_volume'] - joined_bases['volume_div_1000']) / joined_bases['catch_volume']
-    joined_bases['delta2'] = abs(joined_bases['catch_volume'] - joined_bases['volume_div_100']) / joined_bases['catch_volume']
-    joined_bases['delta3'] = abs(joined_bases['catch_volume'] - joined_bases['volume']) / joined_bases['catch_volume']
-
-    joined_bases['mismatch, %'] = joined_bases.apply(lambda x: min(x['delta1'], x['delta2'], x['delta3']), axis=1)
-    joined_bases['mismatch, %'] = (100 * joined_bases['mismatch, %']).round(2)
-
-    joined_bases = joined_bases.drop(columns=['delta1', 'delta2', 'delta3'])
+    joined_bases = calc_mismatch(joined_bases)
 
     joined_bases['threshold_volume'] = threshold
     joined_bases['is_abnormal'] = joined_bases['mismatch, %'] > joined_bases['threshold_volume']
     joined_bases['is_abnormal'] = joined_bases['is_abnormal'].astype(int)
+
+    new_good = find_good_by_shift(joined_bases, db2_aggregated, shift=shift)
+    new_good_index = new_good['index'].to_list()
+    new_good = new_good.drop(columns=['index'])
+    joined_bases = joined_bases.drop(index=new_good_index)
+    joined_bases = pd.concat([joined_bases, new_good]).sort_index()
 
     col_order = ['id_ves', 'date', 'id_fish', 'fish', 'catch_volume', 'volume',
               'volume_div_1000', 'volume_div_100', 'mismatch, %', 'threshold_volume', 'is_abnormal']
 
     joined_bases = joined_bases[col_order]
 
-    col_names = ['id судна (id_ves)', 'дата', 'id рыбы','назавание рыбы', 'выловлено (т)',
+    col_names = ['id судна (id_ves)', 'дата', 'id рыбы','назавание рыбы', 'улов',
                 'внесено в базу (размерность неизвестна)', 'внесено в базу (коррекция 1/1000)', 'внесено в базу (коррекция 1/100)',
                 'отклонение внесенного от выловленного, %', 'порог отклонения, %', 'является ли подозрительным']
 
