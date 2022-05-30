@@ -55,14 +55,14 @@ if mode == 'Несоответствия с известным id':
         ext1, ext2 = helpers.deduplication_db2(ext1, ext2)
         st.session_state['db2'] = streamlit_funcs.get_db2(ext1, ext2)
         st.session_state['filtered_db1'], st.session_state['merged'] = helpers.match(st.session_state['db1'], st.session_state['db2'], date, diff, window=3)
-        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff)
+        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff, shift=3)
 
     update_input = st.sidebar.button('Обновить', key='update_input')
     if update_input:
-        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff)
+        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff, shift=3)
     
     if 'anomalies_with_keys' not in st.session_state:
-        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff)
+        st.session_state['anomalies_with_keys'] = streamlit_funcs.aggregate_db1_db2_table(st.session_state['db1'], st.session_state['db2'], diff, shift=3)
 
     st.header('Расхождения между базами по данным с одинаковыми ключами')
     selection = streamlit_funcs.aggrid_interactive_table(st.session_state['anomalies_with_keys'])
